@@ -18,10 +18,10 @@ class Signal(models.Model):
         MEDIUM = 2, 'Medium'
         HIGH = 3, 'High'
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False) # As data might originate from different places, I'll stick with UUIDs to prevent collision.
 
     author = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        settings.AUTH_USER_MODEL, # Django best practice for custom user models (even if using the default one for now, this code is "future-proof").
         on_delete=models.CASCADE,
         related_name='signals',
     )
