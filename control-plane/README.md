@@ -23,12 +23,31 @@ The main application logic resides in `core/`.
 
 ### Prerequisites
 - Python 3.14
-- Run requirements.txt
+- Docker (for PostgreSQL)
+
+### Database Setup
+
+Start the PostgreSQL container from the infrastructure folder:
+
+```bash
+docker compose -f ../infrastructure/docker-compose.yml up -d
+```
+
+### Environment Configuration
+
+Copy the environment template and adjust values if needed:
+
+```bash
+cp .env.example .env
+```
 
 ### Running the Server
 From the project root (parent directory):
 
 ```bash
+# Install dependencies
+pip install -r requirements.txt
+
 # Apply migrations
 python manage.py migrate
 
