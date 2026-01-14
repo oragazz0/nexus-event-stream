@@ -23,17 +23,48 @@ The main application logic resides in `core/`.
 
 ### Prerequisites
 - Python 3.14
-- Run requirements.txt
+- Docker (for PostgreSQL)
 
-### Running the Server
-From the project root (parent directory):
+### Quick Start
 
 ```bash
+cp .env.example .env
+make setup
+make run
+```
+
+### Makefile Shortcuts
+
+| Command | Description |
+|---------|-------------|
+| `make help` | Show all available commands |
+| `make db-up` | Start PostgreSQL container |
+| `make db-down` | Stop PostgreSQL container |
+| `make install` | Install Python dependencies |
+| `make migrate` | Apply database migrations |
+| `make superuser` | Create superuser from env vars (Remember to set the .env vars first) |
+| `make run` | Run development server |
+| `make setup` | Full setup (db, deps, migrate, superuser) |
+
+### Manual Setup
+
+If you prefer not to use Make:
+
+```bash
+# Start database
+docker compose -f ../infrastructure/docker-compose.yml up -d
+
+# Configure environment
+cp .env.example .env
+
+# Install dependencies
+pip install -r requirements.txt
+
 # Apply migrations
 python manage.py migrate
 
-# Create a superuser (for admin access)
-python manage.py createsuperuser
+# Create superuser (uses env vars from .env)
+python manage.py createsuperuser --noinput
 
 # Run the development server
 python manage.py runserver
