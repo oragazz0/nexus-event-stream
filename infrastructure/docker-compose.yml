@@ -34,6 +34,21 @@ services:
       timeout: 5s
       retries: 5
 
+  redpanda-init:
+    image: docker.redpanda.com/redpandadata/redpanda:latest
+    container_name: redpanda-init
+    entrypoint: /bin/bash
+    command: >
+      -c "
+      (rpk topic create signals.created --partitions 1 --brokers redpanda:29092 || true) &&
+      (rpk topic create signals.updated --partitions 1 --brokers redpanda:29092 || true) &&
+      (rpk topic create signals.deleted --partitions 1 --brokers redpanda:29092 || true) &&
+      echo 'All signal topics created successfully.'
+      "
+    depends_on:
+      redpanda:
+        condition: service_healthy
+
   redpanda-console:
     image: docker.redpanda.com/redpandadata/console:latest
     container_name: redpanda-console
