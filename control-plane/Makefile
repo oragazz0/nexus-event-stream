@@ -24,5 +24,8 @@ superuser: ## Create superuser from environment variables
 run: ## Run development server
 	python manage.py runserver
 
+tests: ## Run tests
+	python manage.py test nexus.core.tests.SignalEventPublishingTestCase -v 2
+
 setup: db-up install migrate superuser ## Full setup: database, dependencies, migrations, superuser
 	@echo "Setup complete! Run 'make run' to start the server."
