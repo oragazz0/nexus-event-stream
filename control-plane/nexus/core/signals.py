@@ -48,8 +48,8 @@ def _signal_payload(instance):
         "id": str(instance.id),
         "title": instance.title,
         "content": instance.content,
-        "priority": instance.priority,
-        "author_id": instance.author_id,
+        "priority": instance.get_priority_display(),
+        "author": instance.author.username,
         "created_at": instance.created_at.isoformat(),
         "updated_at": instance.updated_at.isoformat(),
     }
