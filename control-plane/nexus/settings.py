@@ -131,3 +131,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+# Redpanda / Kafka Configuration
+REDPANDA_BROKERS = os.getenv('REDPANDA_BROKERS', 'localhost:9092')
