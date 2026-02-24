@@ -62,7 +62,7 @@ Application entry point.
 ## Development
 
 ### Prerequisites
-- Go 1.22+
+- Go 1.25+
 - Docker (for Redis and Redpanda)
 
 ### Quick Start
