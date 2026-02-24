@@ -68,7 +68,12 @@ func (p SignalProjection) evict(ctx context.Context, id string) error {
 
 // ListByCreatedAt returns signals ordered by newest first.
 func (p SignalProjection) ListByCreatedAt(ctx context.Context, start, stop int64) ([]domain.Signal, error) {
-	ids, err := p.client.ZRevRange(ctx, keyByCreatedAt, start, stop).Result()
+	ids, err := p.client.ZRangeArgs(ctx, redis.ZRangeArgs{
+		Key:   keyByCreatedAt,
+		Start: start,
+		Stop:  stop,
+		Rev:   true,
+	}).Result()
 	if err != nil {
 		return nil, err
 	}
@@ -78,8 +83,12 @@ func (p SignalProjection) ListByCreatedAt(ctx context.Context, start, stop int64
 // ListByPriority returns signals filtered by priority level.
 func (p SignalProjection) ListByPriority(ctx context.Context, priority string) ([]domain.Signal, error) {
 	score := fmt.Sprintf("%g", priorityScores[priority])
-	rangeBy := &redis.ZRangeBy{Min: score, Max: score}
-	ids, err := p.client.ZRangeByScore(ctx, keyByPriority, rangeBy).Result()
+	ids, err := p.client.ZRangeArgs(ctx, redis.ZRangeArgs{
+		Key:     keyByPriority,
+		Start:   score,
+		Stop:    score,
+		ByScore: true,
+	}).Result()
 	if err != nil {
 		return nil, err
 	}
