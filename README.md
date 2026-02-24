@@ -9,7 +9,44 @@ The project implements the **CQRS (Command-Query Responsibility Segregation)** p
 
 ## Architecture
 
-![Architecture](docs/architecture.mmd)
+```mermaid
+graph TD
+    %% Actors
+    Users(["Users / Admins
+    (Command API)"])
+    Clients(["API / CLI Clients 
+    (Query API)"])
+
+    %% Applications
+    subgraph ControlPlane["Control Plane (Python/Django)"]
+        Django["Django REST API<br/>(Command Side)"]
+        Postgres[("PostgreSQL")]
+    end
+
+    subgraph EventStream["Event Stream"]
+        Redpanda{"Redpanda (Kafka)<br/>Topic: nexus.signals"}
+    end
+
+    subgraph DataPlane["Data Plane (Go)"]
+        GoConsumer["Kafka Consumer"]
+        Redis[("Redis<br/>(Materialized View)")]
+        GoAPI["HTTP Read API<br/>(Query Side)"]
+    end
+
+    %% Flows
+    Users -- "Mutations
+    (POST/PUT/DELETE)" --> Django
+    Django -- "Persist Normalized State" --> Postgres
+    Django -- "Publish Domain Events" --> Redpanda
+    
+    Redpanda -- "Consume Events" --> GoConsumer
+    GoConsumer -- "Project/Invalidate Cache
+    (Upsert/Evict)" --> Redis
+    
+    Clients -- "Fast Reads
+    (GET)" --> GoAPI
+    GoAPI -- "Fetch Denormalized Data" --> Redis
+```
 
 The architecture splits responsibilities:
 - **Operations (Commands):** Validated and persisted in the relational database by Django. A domain event is then published to the stream.

@@ -1,7 +1,9 @@
 graph TD
     %% Actors
-    Users(["Users / Admins\n(Command API)"])
-    Clients(["API / CLI Clients\n(Query API)"])
+    Users(["Users / Admins
+    (Command API)"])
+    Clients(["API / CLI Clients 
+    (Query API)"])
 
     %% Applications
     subgraph ControlPlane["Control Plane (Python/Django)"]
@@ -20,12 +22,15 @@ graph TD
     end
 
     %% Flows
-    Users -- "Mutations\n(POST/PUT/DELETE)" --> Django
+    Users -- "Mutations
+    (POST/PUT/DELETE)" --> Django
     Django -- "Persist Normalized State" --> Postgres
     Django -- "Publish Domain Events" --> Redpanda
     
     Redpanda -- "Consume Events" --> GoConsumer
-    GoConsumer -- "Project/Invalidate Cache\n(Upsert/Evict)" --> Redis
+    GoConsumer -- "Project/Invalidate Cache
+    (Upsert/Evict)" --> Redis
     
-    Clients -- "Fast Reads\n(GET)" --> GoAPI
+    Clients -- "Fast Reads
+    (GET)" --> GoAPI
     GoAPI -- "Fetch Denormalized Data" --> Redis
