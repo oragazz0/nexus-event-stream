@@ -106,3 +106,14 @@ signal:{uuid}              → Hash   (id, title, content, priority, author, tim
 signals:by_created_at      → ZSet   (score = unix timestamp, member = uuid)
 signals:by_priority         → ZSet   (score = 1|2|3, member = uuid)
 ```
+
+## Edge Cases (TODO)
+
+> To be tested and implemented in future iterations.
+
+| Scenario | Current Behavior | Planned Strategy |
+|---|---|---|
+| **Redis is down during consumption** | Consumer retries indefinitely with 1s backoff; offset is not committed, so no data loss. | Add exponential backoff and a circuit breaker to avoid log flooding. |
+| **Cold start (empty Redis, existing events)** | Consumer group starts from `earliest`, replaying the full topic to rebuild the view. | Validate with integration tests; consider a `/rebuild` admin endpoint to trigger manual replay. |
+| **Out-of-order events** | Not an issue today — single partition guarantees ordering per key. | If partitions scale, ensure signal ID is the partition key (already the Kafka message key) and add last-write-wins timestamp checks. |
+| **Event schema evolution** | `json.Unmarshal` ignores unknown fields; missing fields get Go zero values. | Add explicit schema versioning to the event payload and handle migration in the consumer. |
