@@ -1,0 +1,31 @@
+graph TD
+    %% Actors
+    Users(["Users / Admins\n(Command API)"])
+    Clients(["API / CLI Clients\n(Query API)"])
+
+    %% Applications
+    subgraph ControlPlane["Control Plane (Python/Django)"]
+        Django["Django REST API<br/>(Command Side)"]
+        Postgres[("PostgreSQL")]
+    end
+
+    subgraph EventStream["Event Stream"]
+        Redpanda{"Redpanda (Kafka)<br/>Topic: nexus.signals"}
+    end
+
+    subgraph DataPlane["Data Plane (Go)"]
+        GoConsumer["Kafka Consumer"]
+        Redis[("Redis<br/>(Materialized View)")]
+        GoAPI["HTTP Read API<br/>(Query Side)"]
+    end
+
+    %% Flows
+    Users -- "Mutations\n(POST/PUT/DELETE)" --> Django
+    Django -- "Persist Normalized State" --> Postgres
+    Django -- "Publish Domain Events" --> Redpanda
+    
+    Redpanda -- "Consume Events" --> GoConsumer
+    GoConsumer -- "Project/Invalidate Cache\n(Upsert/Evict)" --> Redis
+    
+    Clients -- "Fast Reads\n(GET)" --> GoAPI
+    GoAPI -- "Fetch Denormalized Data" --> Redis

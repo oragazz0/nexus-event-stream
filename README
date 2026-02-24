@@ -1,4 +1,0 @@
-This repository demonstrates concepts and the implementation of Event-Driven Architecture (EDA), Polyglot Microservices (Python + Go) and high-performance Message Streaming.
-
-The Django app is the "Source of Truth" (Management Plane), the Go service is the "Data Plane" (High-performance execution), and the goal is Eventual Consistency with low latency.
-
