@@ -11,13 +11,17 @@ The Data Plane consumes domain events from Redpanda and builds a **materialized 
 
 ## Architecture
 
-The service runs two concurrent workloads in a single binary:
+The service runs two concurrent workloads in a single binary, plus a standalone CLI client:
 
 1. **Kafka Consumer** — reads events, applies them to the Redis projection, commits offsets only after a successful write.
 2. **HTTP Server** — serves read queries from the Redis projection.
+3. **CLI Client** — human-friendly terminal interface that queries the HTTP Server.
 
 ```
 Redpanda ──▶ Consumer ──▶ Redis ◀── HTTP Server ──▶ Clients
+                                         ▲
+                                         │
+                                     CLI Client
 ```
 
 ### Modules
@@ -52,12 +56,24 @@ HTTP read API using Go's stdlib `net/http` with 1.22+ method routing.
 - **`getSignal`**: Returns a single signal by ID.
 - **`health`**: Returns Redis liveness status.
 
+#### `internal/client`
+HTTP client for the data-plane read API.
+- **`ListSignals`**: Fetches all signals, optionally filtered by priority.
+- **`GetSignal`**: Fetches a single signal by ID. Returns `ErrNotFound` on 404.
+- **`Health`**: Checks the data-plane's health endpoint.
+
 #### `cmd/server`
-Application entry point.
+Application entry point for the data-plane service.
 - Initializes a signal-aware context for graceful shutdown.
 - Connects to Redis and validates the connection.
 - Starts the Kafka consumer in a background goroutine.
 - Blocks on the HTTP server until shutdown.
+
+#### `cmd/cli`
+Standalone CLI client for interacting with the data-plane.
+- **`list`**: Displays signals in a tabwriter-aligned table with color-coded priorities.
+- **`get`**: Shows a single signal in a detailed key-value view.
+- **`health`**: Prints a colored health status check.
 
 ## Development
 
@@ -75,16 +91,47 @@ docker compose -f ../infrastructure/docker-compose.yml up -d
 go mod tidy
 
 # Run the service
-go run ./cmd/server
+make run_server
+
+# In another terminal, use the CLI
+make run_cli ARGS="list"
+make run_cli ARGS="get <signal-id>"
+make run_cli ARGS="health"
 ```
 
 ### Environment Variables
+
+**Server** (`cmd/server`)
 
 | Variable | Default | Description |
 |---|---|---|
 | `REDIS_ADDR` | `localhost:6379` | Redis connection address |
 | `KAFKA_BROKERS` | `localhost:9092` | Comma-separated Kafka broker addresses |
 | `HTTP_ADDR` | `:8081` | HTTP server listen address |
+
+**CLI** (`cmd/cli`)
+
+| Variable | Default | Description |
+|---|---|---|
+| `API_URL` | `http://localhost:8081` | Data plane API base URL |
+
+### CLI Usage
+
+```bash
+# List all signals (colored, tabular output)
+nexus-cli list
+
+# Filter by priority
+nexus-cli list -priority High
+
+# Get a single signal (detailed view)
+nexus-cli get 550e8400-e29b-41d4-a716-446655440000
+
+# Health check
+nexus-cli health
+```
+
+Priorities are color-coded: 🔴 High, 🟡 Medium, 🟢 Low.
 
 ### API Endpoints
 
