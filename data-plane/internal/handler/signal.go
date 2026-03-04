@@ -73,7 +73,7 @@ func writeJSON(writer http.ResponseWriter, status int, data interface{}) {
 	headers.Set("Content-Type", "application/json")
 	writer.WriteHeader(status)
 	encoder := json.NewEncoder(writer)
-	encoder.Encode(data)
+	_ = encoder.Encode(data)
 }
 
 func writeError(writer http.ResponseWriter, status int, message string) {

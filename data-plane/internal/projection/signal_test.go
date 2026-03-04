@@ -14,7 +14,11 @@ func setupProjection(t *testing.T) (projection.SignalProjection, *miniredis.Mini
 	t.Helper()
 	server := miniredis.RunT(t)
 	client := redis.NewClient(&redis.Options{Addr: server.Addr()})
-	t.Cleanup(func() { client.Close() })
+	t.Cleanup(func() {
+		if err := client.Close(); err != nil {
+			t.Logf("redis close error: %v", err)
+		}
+	})
 	return projection.New(client), server
 }
 
@@ -59,7 +63,9 @@ func TestApply_Updated(t *testing.T) {
 	ctx := context.Background()
 
 	original := sampleEvent(domain.ActionCreated, "signal-1")
-	proj.Apply(ctx, original)
+	if err := proj.Apply(ctx, original); err != nil {
+		t.Fatalf("failed to apply original event: %v", err)
+	}
 
 	updated := sampleEvent(domain.ActionUpdated, "signal-1")
 	updated.Title = "Updated Alert"
@@ -87,7 +93,9 @@ func TestApply_Deleted(t *testing.T) {
 	proj, _ := setupProjection(t)
 	ctx := context.Background()
 
-	proj.Apply(ctx, sampleEvent(domain.ActionCreated, "signal-1"))
+	if err := proj.Apply(ctx, sampleEvent(domain.ActionCreated, "signal-1")); err != nil {
+		t.Fatalf("failed to apply create event: %v", err)
+	}
 
 	deleteEvent := domain.SignalEvent{
 		Action: domain.ActionDeleted,
@@ -126,8 +134,12 @@ func TestApply_Idempotent(t *testing.T) {
 	ctx := context.Background()
 	event := sampleEvent(domain.ActionCreated, "signal-1")
 
-	proj.Apply(ctx, event)
-	proj.Apply(ctx, event)
+	if err := proj.Apply(ctx, event); err != nil {
+		t.Fatalf("failed to apply first event: %v", err)
+	}
+	if err := proj.Apply(ctx, event); err != nil {
+		t.Fatalf("failed to apply duplicate event: %v", err)
+	}
 
 	signals, err := proj.ListByCreatedAt(ctx, 0, 49)
 	if err != nil {
@@ -173,8 +185,12 @@ func TestListByCreatedAt_Order(t *testing.T) {
 	newer := sampleEvent(domain.ActionCreated, "newer")
 	newer.CreatedAt = "2026-02-23T10:00:00-03:00"
 
-	proj.Apply(ctx, older)
-	proj.Apply(ctx, newer)
+	if err := proj.Apply(ctx, older); err != nil {
+		t.Fatalf("failed to apply older event: %v", err)
+	}
+	if err := proj.Apply(ctx, newer); err != nil {
+		t.Fatalf("failed to apply newer event: %v", err)
+	}
 
 	signals, err := proj.ListByCreatedAt(ctx, 0, 49)
 	if err != nil {
@@ -202,8 +218,12 @@ func TestListByPriority_Filter(t *testing.T) {
 	low.Priority = "Low"
 	low.CreatedAt = "2026-02-22T10:00:00-03:00"
 
-	proj.Apply(ctx, high)
-	proj.Apply(ctx, low)
+	if err := proj.Apply(ctx, high); err != nil {
+		t.Fatalf("failed to apply high event: %v", err)
+	}
+	if err := proj.Apply(ctx, low); err != nil {
+		t.Fatalf("failed to apply low event: %v", err)
+	}
 
 	signals, err := proj.ListByPriority(ctx, "High")
 	if err != nil {
@@ -223,7 +243,9 @@ func TestListByPriority_NoMatch(t *testing.T) {
 
 	low := sampleEvent(domain.ActionCreated, "low-1")
 	low.Priority = "Low"
-	proj.Apply(ctx, low)
+	if err := proj.Apply(ctx, low); err != nil {
+		t.Fatalf("failed to apply low event: %v", err)
+	}
 
 	signals, err := proj.ListByPriority(ctx, "High")
 	if err != nil {
@@ -238,8 +260,12 @@ func TestListByCreatedAt_RemovedAfterDelete(t *testing.T) {
 	proj, _ := setupProjection(t)
 	ctx := context.Background()
 
-	proj.Apply(ctx, sampleEvent(domain.ActionCreated, "signal-1"))
-	proj.Apply(ctx, domain.SignalEvent{Action: domain.ActionDeleted, ID: "signal-1"})
+	if err := proj.Apply(ctx, sampleEvent(domain.ActionCreated, "signal-1")); err != nil {
+		t.Fatalf("failed to apply create event: %v", err)
+	}
+	if err := proj.Apply(ctx, domain.SignalEvent{Action: domain.ActionDeleted, ID: "signal-1"}); err != nil {
+		t.Fatalf("failed to apply delete event: %v", err)
+	}
 
 	signals, err := proj.ListByCreatedAt(ctx, 0, 49)
 	if err != nil {
@@ -265,7 +291,7 @@ func TestHealth_Unhealthy(t *testing.T) {
 	server := miniredis.RunT(t)
 	client := redis.NewClient(&redis.Options{Addr: server.Addr()})
 	proj := projection.New(client)
-	client.Close()
+	_ = client.Close()
 
 	err := proj.Health(context.Background())
 
