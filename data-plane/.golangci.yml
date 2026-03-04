@@ -4,7 +4,6 @@ linters:
   enable:
     - staticcheck
     - errcheck
-    - gosimple
     - unused
     - govet
   settings:
