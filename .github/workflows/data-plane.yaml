@@ -31,7 +31,7 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
-          version: v2.x
+          version: latest
           working-directory: data-plane
 
       - name: Test (with race detector)
