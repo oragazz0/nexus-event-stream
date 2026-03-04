@@ -27,11 +27,11 @@ jobs:
       - name: Vet
         run: go vet ./...
 
-      - name: Install golangci-lint
-        run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-
       - name: golangci-lint
-        run: golangci-lint run ./...
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v2.x
+          working-directory: data-plane
 
       - name: Test (with race detector)
         run: go test -race -count=1 -coverprofile=coverage.out ./...
