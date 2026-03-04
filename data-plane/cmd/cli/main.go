@@ -45,7 +45,9 @@ func main() {
 func runList(dataPlane client.DataPlane) {
 	flags := flag.NewFlagSet("list", flag.ExitOnError)
 	priority := flags.String("priority", "", "Filter by priority (Low, Medium, High)")
-	flags.Parse(os.Args[2:])
+	if err := flags.Parse(os.Args[2:]); err != nil {
+		exitWithError(err)
+	}
 
 	signals, err := dataPlane.ListSignals(*priority)
 	if err != nil {
@@ -61,7 +63,9 @@ func runList(dataPlane client.DataPlane) {
 
 func runGet(dataPlane client.DataPlane) {
 	flags := flag.NewFlagSet("get", flag.ExitOnError)
-	flags.Parse(os.Args[2:])
+	if err := flags.Parse(os.Args[2:]); err != nil {
+		exitWithError(err)
+	}
 
 	args := flags.Args()
 	if len(args) == 0 {
@@ -92,11 +96,11 @@ func runHealth(dataPlane client.DataPlane) {
 
 func printSignalTable(signals []domain.Signal) {
 	writer := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintf(writer, "%sID\tPRIORITY\tAUTHOR\tTITLE\tCREATED%s\n", colorBold, colorReset)
+	_, _ = fmt.Fprintf(writer, "%sID\tPRIORITY\tAUTHOR\tTITLE\tCREATED%s\n", colorBold, colorReset)
 
 	for _, signal := range signals {
 		color := priorityColor(signal.Priority)
-		fmt.Fprintf(writer, "%s\t%s%s%s\t%s\t%s\t%s\n",
+		_, _ = fmt.Fprintf(writer, "%s\t%s%s%s\t%s\t%s\t%s\n",
 			signal.ID,
 			color, signal.Priority, colorReset,
 			signal.Author,
@@ -104,7 +108,7 @@ func printSignalTable(signals []domain.Signal) {
 			formatTime(signal.CreatedAt),
 		)
 	}
-	writer.Flush()
+	_ = writer.Flush()
 }
 
 func printSignalDetail(signal domain.Signal) {

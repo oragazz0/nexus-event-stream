@@ -19,7 +19,11 @@ func main() {
 	ctx := setupContext()
 
 	redisClient := connectRedis(ctx)
-	defer redisClient.Close()
+	defer func() {
+		if err := redisClient.Close(); err != nil {
+			log.Printf("redis close error: %v", err)
+		}
+	}()
 
 	proj := projection.New(redisClient)
 
@@ -58,7 +62,11 @@ func startConsumer(ctx context.Context, proj projection.SignalProjection) {
 	cons := consumer.New(reader, proj)
 	go func() {
 		log.Println("consumer started")
-		defer reader.Close()
+		defer func() {
+			if err := reader.Close(); err != nil {
+				log.Printf("kafka reader close error: %v", err)
+			}
+		}()
 		if err := cons.Start(ctx); err != nil {
 			log.Printf("consumer stopped: %v", err)
 		}
@@ -75,7 +83,9 @@ func serveHTTP(ctx context.Context, proj projection.SignalProjection) {
 
 	go func() {
 		<-ctx.Done()
-		server.Shutdown(context.Background())
+		if err := server.Shutdown(context.Background()); err != nil {
+			log.Printf("http shutdown error: %v", err)
+		}
 	}()
 
 	log.Printf("http server listening on %s", addr)

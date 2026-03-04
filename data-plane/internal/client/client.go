@@ -56,7 +56,7 @@ func (d DataPlane) fetchJSON(path string, target interface{}) error {
 	if err != nil {
 		return fmt.Errorf("connection failed: %w", err)
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	return decodeResponse(response, target)
 }
 

@@ -17,10 +17,13 @@ func fakeServer(handler http.HandlerFunc) (*httptest.Server, client.DataPlane) {
 	return server, dataPlane
 }
 
-func respondJSON(writer http.ResponseWriter, status int, body interface{}) {
+func respondJSON(t *testing.T, writer http.ResponseWriter, status int, body interface{}) {
+	t.Helper()
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(status)
-	json.NewEncoder(writer).Encode(body)
+	if err := json.NewEncoder(writer).Encode(body); err != nil {
+		t.Fatalf("failed to encode response: %v", err)
+	}
 }
 
 func TestListSignals_ReturnsSignals(t *testing.T) {
@@ -29,7 +32,7 @@ func TestListSignals_ReturnsSignals(t *testing.T) {
 		{ID: "s2", Title: "Info", Priority: "Low", Author: "otavio"},
 	}
 	server, dataPlane := fakeServer(func(writer http.ResponseWriter, request *http.Request) {
-		respondJSON(writer, http.StatusOK, signals)
+		respondJSON(t, writer, http.StatusOK, signals)
 	})
 	defer server.Close()
 
@@ -53,16 +56,16 @@ func TestListSignals_SendsPriorityQuery(t *testing.T) {
 		if priority != "High" {
 			t.Errorf("expected priority query %q, got %q", "High", priority)
 		}
-		respondJSON(writer, http.StatusOK, []domain.Signal{})
+		respondJSON(t, writer, http.StatusOK, []domain.Signal{})
 	})
 	defer server.Close()
 
-	dataPlane.ListSignals("High")
+	_, _ = dataPlane.ListSignals("High")
 }
 
 func TestListSignals_EmptyList(t *testing.T) {
 	server, dataPlane := fakeServer(func(writer http.ResponseWriter, request *http.Request) {
-		respondJSON(writer, http.StatusOK, []domain.Signal{})
+		respondJSON(t, writer, http.StatusOK, []domain.Signal{})
 	})
 	defer server.Close()
 
@@ -79,7 +82,7 @@ func TestListSignals_EmptyList(t *testing.T) {
 func TestGetSignal_Found(t *testing.T) {
 	expected := domain.Signal{ID: "abc-123", Title: "Alert", Priority: "High"}
 	server, dataPlane := fakeServer(func(writer http.ResponseWriter, request *http.Request) {
-		respondJSON(writer, http.StatusOK, expected)
+		respondJSON(t, writer, http.StatusOK, expected)
 	})
 	defer server.Close()
 
@@ -124,7 +127,7 @@ func TestGetSignal_ServerError(t *testing.T) {
 
 func TestHealth_Healthy(t *testing.T) {
 	server, dataPlane := fakeServer(func(writer http.ResponseWriter, request *http.Request) {
-		respondJSON(writer, http.StatusOK, map[string]string{"status": "ok"})
+		respondJSON(t, writer, http.StatusOK, map[string]string{"status": "ok"})
 	})
 	defer server.Close()
 
@@ -164,9 +167,9 @@ func TestGetSignal_RequestsCorrectPath(t *testing.T) {
 		if request.URL.Path != expectedPath {
 			t.Errorf("expected path %q, got %q", expectedPath, request.URL.Path)
 		}
-		respondJSON(writer, http.StatusOK, domain.Signal{ID: "uuid-456"})
+		respondJSON(t, writer, http.StatusOK, domain.Signal{ID: "uuid-456"})
 	})
 	defer server.Close()
 
-	dataPlane.GetSignal("uuid-456")
+	_, _ = dataPlane.GetSignal("uuid-456")
 }

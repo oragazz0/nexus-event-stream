@@ -17,7 +17,11 @@ func setupHandler(t *testing.T) (*http.ServeMux, projection.SignalProjection) {
 	t.Helper()
 	server := miniredis.RunT(t)
 	client := redis.NewClient(&redis.Options{Addr: server.Addr()})
-	t.Cleanup(func() { client.Close() })
+	t.Cleanup(func() {
+		if err := client.Close(); err != nil {
+			t.Logf("redis close error: %v", err)
+		}
+	})
 
 	proj := projection.New(client)
 	signalHandler := handler.New(proj)
@@ -57,7 +61,9 @@ func TestListSignals_Empty(t *testing.T) {
 	}
 
 	var signals []domain.Signal
-	json.NewDecoder(recorder.Body).Decode(&signals)
+	if err := json.NewDecoder(recorder.Body).Decode(&signals); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
 
 	if len(signals) != 0 {
 		t.Errorf("expected empty list, got %d signals", len(signals))
@@ -79,7 +85,9 @@ func TestListSignals_ReturnsSeededSignals(t *testing.T) {
 	}
 
 	var signals []domain.Signal
-	json.NewDecoder(recorder.Body).Decode(&signals)
+	if err := json.NewDecoder(recorder.Body).Decode(&signals); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
 
 	if len(signals) != 2 {
 		t.Fatalf("expected 2 signals, got %d", len(signals))
@@ -104,7 +112,9 @@ func TestListSignals_FilterByPriority(t *testing.T) {
 	}
 
 	var signals []domain.Signal
-	json.NewDecoder(recorder.Body).Decode(&signals)
+	if err := json.NewDecoder(recorder.Body).Decode(&signals); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
 
 	if len(signals) != 1 {
 		t.Fatalf("expected 1 signal with Low priority, got %d", len(signals))
@@ -128,7 +138,9 @@ func TestGetSignal_Found(t *testing.T) {
 	}
 
 	var signal domain.Signal
-	json.NewDecoder(recorder.Body).Decode(&signal)
+	if err := json.NewDecoder(recorder.Body).Decode(&signal); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
 
 	if signal.ID != "abc-123" {
 		t.Errorf("expected id %q, got %q", "abc-123", signal.ID)
@@ -164,7 +176,9 @@ func TestHealth_OK(t *testing.T) {
 	}
 
 	var body map[string]string
-	json.NewDecoder(recorder.Body).Decode(&body)
+	if err := json.NewDecoder(recorder.Body).Decode(&body); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
 
 	if body["status"] != "ok" {
 		t.Errorf("expected status %q, got %q", "ok", body["status"])
