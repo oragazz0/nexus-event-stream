@@ -1,0 +1,51 @@
+name: control-plane CI
+
+on:
+  push:
+    paths: ["control-plane/**"]
+  pull_request:
+    paths: ["control-plane/**"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: control-plane
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: nexus_test
+          POSTGRES_USER: nexus
+          POSTGRES_PASSWORD: nexus
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt ruff
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Run migrations
+        env:
+          DATABASE_URL: postgres://nexus:nexus@localhost:5432/nexus_test
+        run: python manage.py migrate --settings=nexus.settings
+
+      - name: Run tests
+        env:
+          DATABASE_URL: postgres://nexus:nexus@localhost:5432/nexus_test
+        run: python manage.py test nexus.core.tests -v 2
