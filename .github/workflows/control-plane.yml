@@ -43,10 +43,14 @@ jobs:
 
       - name: Run migrations
         env:
-          DATABASE_URL: postgres://nexus:nexus@localhost:5432/nexus_test
+          POSTGRES_DB: nexus_test
+          POSTGRES_USER: nexus
+          POSTGRES_PASSWORD: nexus
         run: python manage.py migrate --settings=nexus.settings
 
       - name: Run tests
         env:
-          DATABASE_URL: postgres://nexus:nexus@localhost:5432/nexus_test
+          POSTGRES_DB: nexus_test
+          POSTGRES_USER: nexus
+          POSTGRES_PASSWORD: nexus
         run: python manage.py test nexus.core.tests -v 2
