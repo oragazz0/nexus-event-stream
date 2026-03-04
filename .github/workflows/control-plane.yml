@@ -1,6 +1,7 @@
 name: control-plane CI
 
 on:
+  workflow_dispatch:
   push:
     paths: ["control-plane/**"]
   pull_request:

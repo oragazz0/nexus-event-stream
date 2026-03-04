@@ -1,6 +1,7 @@
 name: data-plane CI
 
 on:
+  workflow_dispatch:
   push:
     paths: ["data-plane/**"]
   pull_request:
