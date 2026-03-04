@@ -6,7 +6,7 @@ proper payload structure and message publishing behavior.
 """
 
 import json
-from unittest.mock import Mock, patch, call
+from unittest.mock import Mock, patch
 from django.test import TransactionTestCase
 from django.contrib.auth import get_user_model
 from nexus.core.models import Signal
@@ -193,7 +193,7 @@ class SignalEventPublishingTestCase(TransactionTestCase):
 
     def test_author_username_in_payload(self):
         """Test that author appears as username, not ID."""
-        signal = Signal.objects.create(
+        Signal.objects.create(
             title="Test Signal",
             content="Testing author field",
             priority=Signal.Priority.MEDIUM,
@@ -213,7 +213,7 @@ class SignalEventPublishingTestCase(TransactionTestCase):
     def test_transaction_commit_behavior(self):
         """Test that events are only published after transaction commits."""
         with patch('nexus.core.signals.transaction.on_commit') as mock_on_commit:
-            signal = Signal.objects.create(
+            Signal.objects.create(
                 title="Transaction Test",
                 content="Testing transaction behavior",
                 priority=Signal.Priority.LOW,
