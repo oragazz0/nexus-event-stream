@@ -14,7 +14,7 @@ graph TD
     %% Actors
     Users(["Users / Admins
     (Command API)"])
-    Clients(["API / CLI Clients 
+    Clients(["API Clients
     (Query API)"])
 
     %% Applications
@@ -31,6 +31,7 @@ graph TD
         GoConsumer["Kafka Consumer"]
         Redis[("Redis<br/>(Materialized View)")]
         GoAPI["HTTP Read API<br/>(Query Side)"]
+        CLI["nexus-cli<br/>(Terminal Client)"]
     end
 
     %% Flows
@@ -38,13 +39,14 @@ graph TD
     (POST/PUT/DELETE)" --> Django
     Django -- "Persist Normalized State" --> Postgres
     Django -- "Publish Domain Events" --> Redpanda
-    
+
     Redpanda -- "Consume Events" --> GoConsumer
     GoConsumer -- "Project/Invalidate Cache
     (Upsert/Evict)" --> Redis
-    
+
     Clients -- "Fast Reads
     (GET)" --> GoAPI
+    CLI -- "list / get / health" --> GoAPI
     GoAPI -- "Fetch Denormalized Data" --> Redis
 ```
 
